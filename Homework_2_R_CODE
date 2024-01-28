@@ -1,0 +1,274 @@
+---
+title: "Assignment_2"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+  pdf_document: default
+date: "2024-01-25"
+author: "Ritesh Penumatsa"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE, warning=FALSE,message=FALSE)
+library(ggplot2)
+library(dplyr)
+
+```
+
+## Problem 1
+
+```{r}
+#1
+# Ensure the dataset is downloading prior to knitting or else it won't work. 
+profs <- read.csv("profs.csv")
+
+ggplot(profs) + geom_histogram(aes(x = eval), fill = "blue", color = "black") + labs(title = "Distribution of Course Evaluation Scores", x = "Evaluation Scores", y = "Count")
+
+```
+
+This is a histogram generating the frequency distribution of evaluation scores between professors. 
+The evaluation scores go from (2-5) with 2 being the lowest and 5 being the highest. 
+The peak or mode of the evaluation score is 4 and most of the data is skewed to the left. 
+Most professors receive evaluation scores of (4-5) than (2-3) based on the data. 
+Whether the evaluation scores are biased or not, most professors were given high evaluation scores.
+
+```{r}
+profs$native <- ifelse(profs$native == "yes", "native", "non-native")
+
+# Create the boxplot
+ggplot(profs, aes(x = eval, y = native)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Course Evaluation Scores for Native vs Non-Native English Speakers",
+       x = "Evaluation Score", 
+       y = "Native or Non-Native Speaker")
+
+
+```
+
+This box-plot displays the distribution of course evaluation scores for native vs non-native English speakers. 
+The median evaluation score for native speakers is 4.0 and the median evaluation score for non-native speakers is about 3.6.
+Native speakers have a much greater IQR and spread than non-native speaker, which means a lot of native speakers received good and not good scores. 
+While most non-native speakers received decent scores but nothing exceptional. We can infer native speakers are more likely to receive greater evaluation 
+than non-native speakers on average.
+
+```{r}
+
+ggplot(profs) + geom_histogram(aes(x = eval), binwidth = 0.2) + facet_wrap(~gender) + labs(title = "Distribution of Course Evaluation Scores by gender", 
+x = "Evaluation Score", y = "Count")
+
+```
+
+This is a histogram representing the course evaluation by gender. Based on the histogram, males were more likely to 
+give out evaluation scores of a (4-5) than females. But females were more likely to give scores of (2-3) than males. 
+Most females gave a score between (3-4) while most men gave a score of (4-5). The general shape of the histogram remains 
+the same so it is likely to conclude there isn't a significant difference between evaluation scores by gender.
+
+```{r}
+ggplot(profs) + geom_point(aes(x = beauty, eval)) + labs(title = "Distribution of Course Evaluation Scores by Physical Attractiveness", 
+x = "Physical Attractiveness", y = "Evaluation Score")
+```
+
+This is a scatter-plot testing whether or not physical attractiveness is a factor of evaluation score. Physical attractiveness 
+goes from (-1, 2) with -1 being the least attractive and 2 being the most attractive. The scatter-plot looks like there is a weak 
+positive correlation because as physical attractiveness increases the evaluation scores tend to increase and vise-versa. But the 
+correlation is not strong enough to prove physical attractiveness is the reason for evaluation scores as it could just be a confounding variable.
+
+After analyzing possible variables which affect a professor's evaluation score, we found gender had some difference in the evaluation score 
+which a male on average giving a higher rating than a female. We noticed native speakers had a slight advantage over non-native English speakers
+as they were more likely to receive higher course evaluation scores and physical attractiveness has some play with evaluation score but not 
+strong enough to say it is the main factor.
+
+## Problem 2
+
+```{r}
+#2
+bikeshare <- read.csv("bikeshare.csv")
+
+avg_bike_rentals <- bikeshare %>% 
+  group_by(hr) %>% 
+  summarise(averageRental = mean(total))
+
+ggplot(avg_bike_rentals, aes(x = averageRental, y = hr)) + geom_line() + labs(title = "Average Hourly Bike Rentals", x = "Average Rentals", y = "Hour of the Day") 
+
+
+
+```
+
+This is a line graph displaying the average rentals of bike across different hours of the day (0-23) with the average rentals being the x-axis 
+and hour of the day being the y-axis. We can tell from hour (0-5) and (20-23) the average rentals are low at about 100 or less compared to the 
+other hours of the day. During hour (7-18) the average bike rentals increase significantly compared to the other hours of the day at about 
+200 or more. It is safe to say the hour of the day has a significant impact on the amount of bike rentals.
+
+```{r}
+avg_bike_rental_hour_of_the_day <- bikeshare %>% 
+  group_by(hr, workingday) %>% 
+  summarise(averageRental = mean(total), .groups = "keep") %>% 
+  mutate(workingday = ifelse(workingday == 1, "Working Day", "Non-Working Day"))
+
+ggplot(avg_bike_rental_hour_of_the_day, aes(x = averageRental, y = hr, group = workingday, color = factor(workingday))) + geom_line() + 
+facet_wrap(~workingday, scales = "free_y") +
+  labs(title = "Average Hourly Bike Rentals by Working Day",
+       x = "Average Rentals",
+       y = "Hour of the Day",
+       color = "Working Day")
+  
+
+
+```
+
+The 2 line graphs are displaying the working vs non-working day difference between average rentals for the hour of the day. 
+Here the x-axis represents the average rental and the y-axis represents the hour of the day and it is grouped by whether it is a
+working day or not. The average rentals for a working day can exceed past 500 while the average rentals for a non-working day usually 
+stop at 380 bikes. They both sell a low amount of bikes from (0-7) hour and (20-23) hour with less than 100 bikes sold within 
+these hours. People rent a lot of bikes within daylight hours with average rentals increasing rapidly. But during the working 
+day people are more likely to rent bikes during the daylight hours.
+
+```{r}
+avg_ridership_by_weather_situation <- bikeshare %>% 
+  filter(hr == 9) %>% 
+  group_by(weathersit, workingday) %>% 
+  summarise(avg_ridership = mean(total), .groups = "keep") %>% 
+  mutate(workingday = ifelse(workingday == 1, "Working Day", "Non-Working Day"))
+
+ggplot(avg_ridership_by_weather_situation, aes(x = avg_ridership, y = factor(weathersit), fill = factor(workingday))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~workingday) +
+  labs(title = "Average Ridership at 9 am by Weather Situation and by Working Day",
+       x = "Average Ridership",
+       y = "Weather Situation",
+       fill = "Working Day") + coord_flip()
+```
+
+Here is a side by side bar plot of the average ridership at 9 am hour by weather situation and whether it is
+a working day or not. The x-axis represents the weather situation which a score of 1 is the lowest and 3 is the
+highest and the y-axis is the average ridership which is average number of bike rentals at 9 am grouped by whether or not
+it is a working day. All the average ridership for the working day is greater than those on the non-working day.
+So we can say regardless of weather situation, working day will lead to a greater average ridership. 
+The weather situation saw a greater average ridership for weather situation 1-2 and less average ridership at weather situation 3.
+
+From all the data we have gathered, it is safe to conclude the hour of the day and being a working day has an impact on the average ridership. 
+On average, more people are likely to rent bikes on a working day verus a non-working day and are likely to rent bikes during hours of 
+daylight rather than nighttime hours.
+
+## Problem 3
+
+```{r}
+#3 
+
+capmetro_UT <- read.csv("capmetro_UT.csv")
+
+capmetro_UT <- mutate(capmetro_UT, day_of_week = factor(day_of_week, levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+month = factor(month, levels = c("Sep", "Oct", "Nov")))
+
+average_boardings <- capmetro_UT %>% 
+  group_by(day_of_week, hour_of_day, month) %>% 
+  summarise(avg_boarding = mean(boarding), .groups = 'keep')
+
+ggplot(average_boardings, aes(x = hour_of_day, y = avg_boarding, color = month)) + 
+  geom_line() + 
+  facet_wrap(~ day_of_week, ncol = 3) + 
+  labs(title = "Average Boarding by Hour of the Day, Day of Week, and Month", 
+       x = "Hour of the Day", 
+       y = "Average Boarding")
+
+
+
+
+
+```
+
+The line graph represents the average boarding based on hour of the day, day of the week, and the month. 
+The x-axis represents the hour of the day from (0-23) and the y-axis representing the average boarding (average people who ride the bus).
+We can tell people are more likely to board the bus on a weekday than a weekend as average boarding from (Mon-Fri) are definitely greater 
+than average boarding from (Sat-Sun). The average boarding for a day rapidly increases from the (0-18) hr then from (18-23) hr the 
+average boarding rapidly decreases forming a parabola like shape. The peak hours of average boarding is between (16-18) hr. 
+On weekends, the month has little to no impact on the average boarding since the numbers barely change. On a Monday, people are 
+more likely to board on a October or November than a September. But on Wednesday, Thursday, and Friday, people are more likely to board on a 
+September or October than a November.
+
+```{r}
+ggplot(capmetro_UT, aes(x = temperature, y = boarding, color = weekend)) + 
+  geom_point() + facet_wrap(~hour_of_day) + labs(title = "Temperature vs Boarding based on Hour of Day", x = "Temperature", y = "Boarding")
+
+```
+
+This scatter-plot displays the relationship between amount of boarding on the city bus and the temperature for different 
+hours of the day for both weekends and weekdays. The x-axis represents the temperature and the y-axis represents the total boarding. 
+By looking at the graphs, we can see people are more likely to board on a weekday than a weekend. As boarding increases dramatically
+when it is a weekday. We can tell people are more likely to board when the temperature is between (40-80)º and are less likely to board
+when temperature is below 40º and above 80º. Majority of the boarding seem to take place between hour 10 and 18 and a few boarding 
+take place between 6th and 7th hour.
+
+Based on the data, we can infer the hour of the day and day of the week have a significant impact on the boarding. 
+It is more likely people will board on a weekday than a weekend and people are more likely to board during the afternoon 
+and evening vs the morning and night. We can infer temperature has an impact on the boarding only if it drops below 40º or exceeds 80º. 
+The month has small impact on the amount of people who board but not enough to conclude month is a primary factor of boarding.
+
+## Problem 4
+
+```{r}
+#4
+
+billboard <- read.csv("billboard.csv")
+
+top_10_songs <- billboard %>% 
+  filter(year >= 1958) %>% 
+  group_by(performer, song) %>% 
+  summarise(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  head(10)
+
+top_10_songs
+
+
+
+```
+
+This is a table displaying the performers and the top 10 songs based on number of weeks the song has spent on the Billboard Top 100 List. 
+The table consists of 3 colums each representing the performer name, their song, and number of weeks the song has spend on the list and 10 rows
+each represeting the top 10 songs with the most number of weeks spent on the Top 100 List. Based on the table, Radioactive by Imagine Dragons 
+spent 87 weeks on the chart which is the greatest number of weeks a song as spent on the chart. We can conclude for a song to in the top 10, it 
+would have to be spent more than 64 weeks in the top 100 List.
+
+```{r}
+musical_diversity <- billboard %>% 
+  filter(year != 1958 & year != 2021) %>% 
+  group_by(year) %>% 
+  summarise(num_unique_songs = n_distinct(song))
+
+ggplot(musical_diversity, aes(x = num_unique_songs, y = year)) +
+  geom_line() +
+  labs(title = "Musical Diversity of Billboard Top 100 Over Time",
+       x = "Number of Unique Songs",
+       y = "Year") +
+  theme_bw() + coord_flip()
+
+
+```
+
+The line graph displays the number of unique songs from 1959-2020. The x-axis represents the year and y-axis represents the number of unique songs. 
+We can see the number of unique songs has not changed over the years it remained the constant from 1970 to 2020. But in the 2000's the number of 
+unique songs have fluctuated from 400-800 unique songs while the in the 1960's it only fluctuated from 650-780 unique songs.
+
+```{r}
+ten_weeks_hit <- billboard %>% 
+  filter(weeks_on_chart >= 10)
+
+artist_hits <- ten_weeks_hit %>%
+  group_by(performer) %>%
+  summarise(num_ten_week_hits = n_distinct(song))
+
+top_artists <- artist_hits %>%
+  filter(num_ten_week_hits >= 30)
+
+ggplot(top_artists, aes(x = reorder(performer, num_ten_week_hits), y = num_ten_week_hits)) +
+  geom_bar(stat = "identity", fill = "turquoise") +
+  labs(title = "Top Artists with at least 30 Ten-Week Hits",
+       x = "Artist",
+       y = "Number of Ten-Week Hits") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This is a bar graph of the 19 artists with at least 30 songs in the 10-weeks hit list. The 10-week hit list is a song in the billboard top 100 list
+for at least 10 weeks. Here we can see Elton John has the highest number of ten-weeks hit with 52.
